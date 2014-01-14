@@ -12,6 +12,13 @@
 :- use_module(data).
 :- use_module(recognise).
 
+/** <module> Show analysis results
+
+This module shows analysis results in  a   web  browser. The typical use
+case is to show a datasource (rectangular area) as an HTML table.
+*/
+
+
 :- http_handler(root(.), home, []).
 :- http_handler(root('webui.css'), http_reply_file('webui.css', []), []).
 

@@ -24,6 +24,12 @@
 :- use_module(ods_table).
 :- use_module(library(apply)).
 
+/** <module> Represent and reason about sheet areas
+
+This module represents rectangular areas in a sheet and can reason about
+such regions.
+*/
+
 
 		 /*******************************
 		 *	 SIMPLE PROPERTIES	*

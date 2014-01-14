@@ -3,6 +3,9 @@
 	    variable_name/2
 	  ]).
 
+/** <module> Name Prolog variables (debugging)
+*/
+
 %%	name_variable(+Var, +Name) is det.
 %
 %	Assign a name to a variable. Succeeds   silently if Var is not a

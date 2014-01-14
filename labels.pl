@@ -7,6 +7,8 @@
 :- meta_predicate
 	assert_labels(:).
 
+/** <module> Collect and count labels found in a spreadsheet
+*/
 
 		 /*******************************
 		 *	   FINDING LABELS	*
