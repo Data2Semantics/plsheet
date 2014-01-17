@@ -37,9 +37,9 @@ dom(Member, DOM) :-
 
 load :-
 	file(File),
-	load(File),
-	consult('ds_formulas.db'),
-	ds_graph.
+	load(File).
+%	consult('ds_formulas.db'),
+%	ds_graph.
 
 load(File) :-
 	ods_unload,
