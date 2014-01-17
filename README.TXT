@@ -14,6 +14,15 @@ starting point to use the library.
 
 PlSheet is hosted on GitHub at https://github.com/Data2Semantics/plsheet
 
+## Installation
+
+Plsheet depends on two SWI-Prolog add-ons,  which can be installed using
+the following commands (to be typed at the Prolog prompt)
+
+  ==
+  ?- pack_install(webconsole).
+  ?- pack_install(graphml).
+  ==
 
 ## Documentation
 
