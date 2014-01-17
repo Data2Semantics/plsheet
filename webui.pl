@@ -5,7 +5,7 @@
 	    clear/0
 	  ]).
 :- use_module(library(http/thread_httpd)).
-:- use_module(dialog/http_dialog).
+:- use_module(library(webconsole)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/html_head)).
 :- use_module(library(http/html_write)).
@@ -30,19 +30,19 @@ home(_Request) :-
 	reply_html_page(title('Spreadsheet analyzer'),
 			[ \html_requires(root('webui.css')),
 			  h1('Spreadsheet analyzer'),
-			  \error_area,
-			  \log_area([id(log)]),
-			  \form_area([id(form)])
+			  \wc_error_area,
+			  \wc_output_area([id(log)]),
+			  \wc_form_area([id(form)])
 			]).
 
 show(Data) :-
 	show(Data, []).
 
 show(Data, Options) :-
-	log_html(log, \webshow(Data), Options).
+	wc_html(log, \webshow(Data), Options).
 
 clear :-
-	log_html(log, '', [clear(true)]).
+	wc_html(log, '', [clear(true)]).
 
 webshow(Data) -->
 	html(h4('Showing ~p'-[Data])),
