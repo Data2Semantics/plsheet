@@ -22,6 +22,7 @@
 :- use_module(library(error)).
 :- use_module(library(clpfd), except([transpose/2])).
 :- use_module(library(ugraphs)).
+:- use_module(library(trace/pprint)).
 
 :- meta_predicate
 	tables(:, ?, -),
@@ -117,7 +118,7 @@ resolve_intersections(Blocks0, Blocks) :-
 		Intersections),
 	(   Intersections == []
 	->  Blocks = Blocks0
-	;   pp(Intersections)
+	;   print_term(Intersections, [])
 	).
 
 %%	block_intersection(+Blocks:list, -Intersection) is nondet.

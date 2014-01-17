@@ -15,6 +15,7 @@
 :- use_module(library(lists)).
 :- use_module(library(ordsets)).
 :- use_module(library(thread)).
+:- use_module(library(trace/pprint)).
 :- use_module(ods_table).
 :- use_module(datasource).
 
@@ -159,7 +160,7 @@ ds_formulas([H|T], FL0, FL) :-
 	(   ds_formula(H, FL0, FL1)
 	->  true
 	;   gtrace,
-	    pp(H),
+	    print_term(H, []),
 	    ds_formula(H, FL0, FL1)
 	),
 	ds_formulas(T, FL1, FL).
