@@ -5,7 +5,7 @@
 	    clear/0
 	  ]).
 :- use_module(library(http/thread_httpd)).
-:- use_module(library(webconsole)).
+:- use_module(library(webconsole)).	% ?- pack_install(webconsole)
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/html_head)).
 :- use_module(library(http/html_write)).

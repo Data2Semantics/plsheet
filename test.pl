@@ -8,7 +8,7 @@
 :- use_module(varnames).
 :- use_module(webui).
 :- use_module(library(debug)).
-:- use_module(library(graphml_ugraph)).
+:- use_module(library(graphml_ugraph)).	% ?- pack_install(graphml).
 
 :- initialization
 	start_server.
