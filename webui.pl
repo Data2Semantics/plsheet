@@ -70,6 +70,10 @@ web_portray(List) -->
 	},
 	html(h2('List of ~D objects'-[Len])),
 	web_portray_list(List).
+web_portray(Block) -->
+	{ ground(Block), block(Block, _Type, DS) },
+	html(h2('Block ~p'-[Block])),
+	web_portray(DS).
 web_portray(_) -->
 	html(p('No rules to portray')).
 
