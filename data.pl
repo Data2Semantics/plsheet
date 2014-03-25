@@ -1,6 +1,7 @@
 :- module(ods_data,
 	  [ assert_table/1,		% +Table
 	    assert_block/1,		% +Block
+	    retract_block/1,		% +BlockId
 
 	    sheet_object/3,		% ?Sheet, ?Type, ?Object
 	    object_union/2,		% ?Object, ?Union
@@ -21,6 +22,7 @@
 :- meta_predicate
 	assert_table(:),
 	assert_block(:),
+	retract_block(:),
 	sheet_table(:, ?),
 	sheet_object(:, ?, ?),
 	assert_object_property(:, +),
@@ -81,6 +83,14 @@ assert_block(M:T) :-
 	ds_sheet(DS, Sheet),
 	forall(ds_inside(DS, X, Y),
 	       assert_cell_property(M:Sheet, X, Y, block(BlockId))).
+
+%%	retract_block(:BlockId) is det.
+
+retract_block(M:BlockId) :-
+	must_be(atom, BlockId),
+	retract(M:block(BlockId, _, _)), !.
+retract_block(M:BlockId) :-
+	existence_error(block, M:BlockId).
 
 %%	sheet_object(:Sheet, ?Type, ?Object)
 %
