@@ -1231,7 +1231,7 @@ eval_function('MATCH'(VExpr, ValuesExpr, How), Value, M) :- !,
 	    ->	Value = #('N/A')
 	    ;	nth1(Index, Values, V),
 		ods_before(V, Target)
-	    ->	Value is V-1
+	    ->	Value is Index-1
 	    ;	length(Values, Value)
 	    )
 	;   How =:= 0
@@ -1245,7 +1245,7 @@ eval_function('MATCH'(VExpr, ValuesExpr, How), Value, M) :- !,
 	    ->	Value = #('N/A')
 	    ;	nth1(Index, Values, V),
 		ods_before(Target, V)
-	    ->	Value is V-1
+	    ->	Value is Index-1
 	    ;	length(Values, Value)
 	    )
 	;   Value = #('N/A')
