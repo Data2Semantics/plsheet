@@ -71,7 +71,10 @@ web_portray(List) -->
 	html(h2('List of ~D objects'-[Len])),
 	web_portray_list(List).
 web_portray(Block) -->
-	{ ground(Block), block(Block, _Type, DS) },
+	{ ground(Block),
+	  current_predicate(block/3),
+	  block(Block, _Type, DS)
+	},
 	html(h2('Block ~p'-[Block])),
 	web_portray(DS).
 web_portray(_) -->
