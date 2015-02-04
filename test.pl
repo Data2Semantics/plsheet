@@ -24,7 +24,7 @@ start_server :-
 	assertz(server_url(URL)),
 	www_open_url(URL).
 
-file('E-Design-v2.205 sept 2011.ods').
+file('plsheet/EDesignModelv2.205sept2011_transl_marked.ods').
 sheet('WindopLand').
 
 dom(DOM) :-
