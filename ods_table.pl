@@ -20,9 +20,7 @@
 	    cell_id/3,			% ?X, ?Y, ?Id
 
 	    sheet_name_need_quotes/1,	% +SheetName
-	    ods_reference//2,		% -Expr, +Table
-
-	    eval_lookup/4		% +Lookup, -Value, +Module, -TargetCell
+	    ods_reference//2		% -Expr, +Table
 	  ]).
 :- use_module(library(xpath)).
 :- use_module(library(sgml)).
