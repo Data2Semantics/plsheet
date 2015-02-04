@@ -20,7 +20,9 @@
 	    cell_id/3,			% ?X, ?Y, ?Id
 
 	    sheet_name_need_quotes/1,	% +SheetName
-	    ods_reference//2		% -Expr, +Table
+	    ods_reference//2,		% -Expr, +Table
+
+	    eval_lookup/4		% +Lookup, -Value, +Module, -TargetCell
 	  ]).
 :- use_module(library(xpath)).
 :- use_module(library(sgml)).
@@ -1156,68 +1158,7 @@ eval_function('IF'(Cond, Then, Else), Value, M) :- !,
 	->  ods_eval(Then, Value, M)
 	;   ods_eval(Else, Value, M)
 	).
-eval_function('VLOOKUP'(VExpr, DataSource, ColExpr), Value, M) :- !,
-	ods_eval(VExpr, V, M),
-	(   DataSource = cell_range(Sheet, SX,SY, EX,EY),
-	    ods_eval_typed(ColExpr, integer, Column, M),
-	    Column \= #(_),
-	    TX is SX+Column-1,
-	    TX =< EX
-	->  (   bisect(range_vtest(V, Sheet, SX), SY, EY, TY)
-	    ->	cell_value(Sheet, TX, TY, Value)
-	    ;	Value = #('N/A')
-	    )
-	;   print_message(error, ods(invalid_vlookup)),
-	    Value = #('N/A')
-	).
-eval_function('VLOOKUP'(VExpr, DataSource, ColExpr, Sorted), Value, M) :- !,
-	(   ods_eval(Sorted, @false, M)
-	->  ods_eval(VExpr, V, M),
-	    (	DataSource = cell_range(Sheet, SX,SY, EX,EY)
-	    ->	(   ods_eval_typed(ColExpr, integer, Column, M),
-		    TX is SX+Column-1,
-		    TX =< EX,		% TBD: range error
-		    between(SY, EY, Y),
-		    cell_value(Sheet, SX, Y, V)
-		->  cell_value(Sheet, TX, Y, Value)
-		;   Value = #('N/A')
-		)
-	    ;	print_message(error, ods(unsupported_datasource, DataSource)),
-		Value = #('N/A')
-	    )
-	;   eval_function('VLOOKUP'(VExpr, DataSource, ColExpr), Value, M)
-	).
-eval_function('HLOOKUP'(VExpr, DataSource, RowExpr), Value, M) :- !,
-	ods_eval(VExpr, V, M),
-	(   DataSource = cell_range(Sheet, SX,SY, EX,EY),
-	    ods_eval_typed(RowExpr, integer, Row, M),
-	    Row \= #(_),
-	    TY is SY+Row-1,
-	    TY =< EY
-	->  (   bisect(range_vtest(V, Sheet, SY), SX, EX, TX)
-	    ->	cell_value(Sheet, TX, TY, Value)
-	    ;	Value = #('N/A')
-	    )
-	;   print_message(error, ods(invalid_vlookup)),
-	    Value = #('N/A')
-	).
-eval_function('HLOOKUP'(VExpr, DataSource, ColExpr, Sorted), Value, M) :- !,
-	(   ods_eval(Sorted, @false, M)
-	->  ods_eval(VExpr, V, M),
-	    (	DataSource = cell_range(Sheet, SX,SY, EX,EY)
-	    ->	(   ods_eval_typed(ColExpr, integer, Column, M),
-		    TY is SY+Column-1,
-		    TY =< EY,		% TBD: range error
-		    between(SX, EX, X),
-		    cell_value(Sheet, X, SY, V)
-		->  cell_value(Sheet, X, TY, Value)
-		;   Value = #('N/A')
-		)
-	    ;	print_message(error, ods(unsupported_datasource, DataSource)),
-		Value = #('N/A')
-	    )
-	;   eval_function('HLOOKUP'(VExpr, DataSource, ColExpr), Value, M)
-	).
+
 eval_function('MATCH'(VExpr, Values), Value, M) :- !,
 	eval_function('MATCH'(VExpr, Values, 1), Value, M).
 eval_function('MATCH'(VExpr, ValuesExpr, How), Value, M) :- !,
