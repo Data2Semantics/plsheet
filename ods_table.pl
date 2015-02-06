@@ -1272,7 +1272,7 @@ eval_lookup('VLOOKUP'(VExpr, DataSource, ColExpr, Sorted), Value, M, Target) :- 
 	    ;	print_message(error, ods(unsupported_datasource, DataSource)),
 		Value = #('N/A')
 	    )
-	;   eval_function('VLOOKUP'(VExpr, DataSource, ColExpr), Value, M)
+	;   eval_lookup('VLOOKUP'(VExpr, DataSource, ColExpr), Value, M, Target)
 	),
 	Target = cell(Sheet,TX,Y).
 
@@ -1307,11 +1307,9 @@ eval_lookup('HLOOKUP'(VExpr, DataSource, ColExpr, Sorted), Value, M, Target) :- 
 	    ;	print_message(error, ods(unsupported_datasource, DataSource)),
 		Value = #('N/A')
 	    )
-	;   eval_function('HLOOKUP'(VExpr, DataSource, ColExpr), Value, M)
+	;   eval_lookup('HLOOKUP'(VExpr, DataSource, ColExpr), Value, M, Target)
 	),
 	Target = cell(Sheet,X,TY).
-
-
 
 ods_evalm(M, Expr, Value) :-
 	ods_eval(Expr, Value, M).
