@@ -1239,6 +1239,11 @@ eval_function(Expr, Value, M) :-
 	    )
 	).
 
+		 /*********************************
+		 * PREPROCESSING LOOKUP FUNCTIONS *
+		 *********************************/
+
+
 %%	eval_lookup(+Expr, -Value, +Module, -TargetCell)
 %
 

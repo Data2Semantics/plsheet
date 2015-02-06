@@ -398,7 +398,8 @@ pair_nil(X, X-[]).
 cell_dependency(Sheet, cell(Sheet,X,Y), Inputs) :-
 	Sheet = M:_,
 	cell_formula(Sheet, X, Y, Formula),
-	formula_cells(Formula, M, Inputs0, []),
+	simplify_lookup(Formula,Simple),
+	formula_cells(Simple, M, Inputs0, []),
 	sort(Inputs0, Inputs).
 
 formula_cells(cell(S,X,Y), M, [cell(M:S,X,Y)|T], T) :- !.
@@ -409,7 +410,8 @@ formula_cells(DataSource, M,  Cells, Rest) :-
 		   \+ cell_formula(M:S,X,Y,_))
 	->  debug(dep, 'DataSource without formulas: ~p', [DataSource]),
 	    Cells = [cell_range(M:S,SX,SY,EX,EY)|Rest]
-	;   findall(cell(M:S,X,Y), ds_inside(DataSource,X,Y), Cells, Rest)
+	;   debug(nodep, 'DataSource with formulas: ~p', [DataSource]),
+	    findall(cell(M:S,X,Y), ds_inside(DataSource,X,Y), Cells, Rest)
 	).
 formula_cells(ext(URL, DS), _M, Cells, Cells) :- !,
 	debug(dep, 'External ref: ~p ~p', [URL, DS]).
