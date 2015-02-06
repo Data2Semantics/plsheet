@@ -22,7 +22,8 @@
 	    sheet_name_need_quotes/1,	% +SheetName
 	    ods_reference//2,		% -Expr, +Table
 
-	    eval_lookup/4		% +Lookup, -Value, +Module, -TargetCell
+	    eval_lookup/4,		% +Lookup, -Value, +Module, -TargetCell
+	    simplify_lookup/2           % +Lookup, -Simple
 	  ]).
 :- use_module(library(xpath)).
 :- use_module(library(sgml)).
@@ -1552,6 +1553,36 @@ ods_add(N1, N2, N) :-
 ods_add(@empty, Sum, Sum) :- !.
 ods_add(_, #(E), #(E)) :- !.
 ods_add(#(E), _, #(E)) :- !.
+
+%%	simplify_lookup(+LookupIn -TargetCellOut)
+%
+%	Replace lookup functions with reference to target cell
+
+:- dynamic
+	simplified_lookup/2.
+
+simplify_lookup(Lookup, Simple) :-
+	simplified_lookup(Lookup, Simple), !.
+simplify_lookup(Lookup, Simple) :-
+	simplify_lookup_2(Lookup, Simple),
+	assertion(ground(Simple)),
+	asserta(simplified_lookup(Lookup, Simple)).
+
+simplify_lookup_2(Lookup,Simple) :-
+	lookup(Lookup),
+	eval_lookup(Lookup,Value,user,Simple),
+	Value \== #('N/A'), !.
+simplify_lookup_2(F0, F) :-
+	compound(F0), !,
+	F0 =.. [Name|Args0],
+	maplist(simplify_lookup_2, Args0, Args),
+	F =.. [Name|Args].
+simplify_lookup_2(F, F).
+
+lookup('VLOOKUP'(_,_,_)).
+lookup('VLOOKUP'(_,_,_,_)).
+lookup('HLOOKUP'(_,_,_)).
+lookup('HLOOKUP'(_,_,_,_)).
 
 
 		 /*******************************
