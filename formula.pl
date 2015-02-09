@@ -375,19 +375,18 @@ simplify_formula(F0, F) :-
 	F =.. [Name|Args].
 simplify_formula(F, F).
 
-
 %%	sheet_dependency_graph(:Sheet, -UGraph) is det.
 %
 %	Create a UGraph that represents  the dependencies between cells.
 %	Nodes in the cells are terms cell(S,X,Y).
 
 sheet_dependency_graph(Sheet, Graph) :-
-	findall(Cell-Dep, cell_dependency(Sheet, Cell, Dep), Graph0),
+	findall(Cell-Dep, merged_cell_dependency(Sheet, Cell, Dep), Graph0),
 	sort(Graph0, Graph1),
-					% Add missing (source) nodes
 	pairs_keys_values(Graph1, Left, RightSets),
 	append(RightSets, Right0),
 	sort(Right0, Right),
+	                                   % Add missing (source) nodes
 	ord_subtract(Right, Left, Sources),
 	maplist(pair_nil, Sources, SourceTerms),
 	ord_union(Graph1, SourceTerms, Graph2),
