@@ -402,6 +402,18 @@ cell_dependency(Sheet, cell(Sheet,X,Y), Inputs) :-
 	formula_cells(Simple, M, Inputs0, []),
 	sort(Inputs0, Inputs).
 
+merged_cell_dependency(Sheet, MergedCell, MergedInputs) :-
+	cell_dependency(Sheet, cell(Sheet,X,Y), Inputs),
+	merge_copy_cells(cell(Sheet,X,Y),MergedCell),
+	maplist(merge_copy_cells,Inputs,MergedInputs).
+
+merge_copy_cells(cell(Sheet,X,Y),CopyRange):-
+	sheet_ds_formulas(Sheet, Groups),
+	member(CopyRange =_Rest,Groups),
+	ds_inside(CopyRange,X,Y),!.
+merge_copy_cells(C,C).
+
+
 formula_cells(cell(S,X,Y), M, [cell(M:S,X,Y)|T], T) :- !.
 formula_cells(DataSource, M,  Cells, Rest) :-
 	DataSource = cell_range(S,SX,SY,EX,EY), !,
