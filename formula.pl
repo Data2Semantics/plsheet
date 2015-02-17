@@ -24,7 +24,7 @@
 
 :- meta_predicate
 	sheet_ds_formulas(:, -),
-	sheet_formula_groups(:, -),
+	sheet_formula_groups(:, -,-),
 	sheet_dependency_graph(:, -),
 	cell_dependency_graph(:,+,+,+,-).
 
