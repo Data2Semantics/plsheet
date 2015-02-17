@@ -409,7 +409,8 @@ formula_cells(DataSource, M,  Cells, Rest) :-
 		   \+ cell_formula(M:S,X,Y,_))
 	->  debug(dep, 'DataSource without formulas: ~p', [DataSource]),
 	    Cells = [cell_range(M:S,SX,SY,EX,EY)|Rest]
-	;   findall(cell(M:S,X,Y), ds_inside(DataSource,X,Y), Cells, Rest)
+	;   debug(nodep, 'DataSource with formulas: ~p', [DataSource]),
+	    findall(cell(M:S,X,Y), ds_inside(DataSource,X,Y), Cells, Rest)
 	).
 formula_cells(ext(URL, DS), _M, Cells, Cells) :- !,
 	debug(dep, 'External ref: ~p ~p', [URL, DS]).
