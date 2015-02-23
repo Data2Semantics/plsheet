@@ -275,6 +275,11 @@ range_formula(xy(X,Xa,Xa,Y,Ya,Ya),
 	      cell_range(S,Xs,Ys,Xe,Ye)) :-
 	findall(XFs-XFe, X=Xa, [Xs-Xe]),
 	findall(YFs-YFe, Y=Ya, [Ys-Ye]), !.
+range_formula(xy(X,Xa,Xz,Y,Ya,Ya),
+	      cell_range(S,XF,YFs,XF,YFe),
+	      cell_range(S,Xs,Ys,Xe,Ye)) :-
+	findall(XF, (X=Xa; X=Xz), [Xs,Xe]),
+	findall(YFs-YFe, Y=Ya, [Ys-Ye]), !.
 range_formula(xy(X,Xa,Xz,Y,Ya,Yz),
 	      cell(S,XF,YF),
 	      cell_range(S,Xs,Ys,Xe,Ye)) :-
