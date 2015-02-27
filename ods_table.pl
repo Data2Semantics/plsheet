@@ -1575,8 +1575,11 @@ simplify_lookup(Lookup, Simple) :-
 
 simplify_lookup_2(Lookup,Simple) :-
 	lookup(Lookup),
-	eval_lookup(Lookup,Value,user,Simple),
-	Value \== #('N/A'), !.
+	eval_lookup(Lookup,Value,user,Simple0), !,
+	(   Value \== #('N/A')
+	->  Simple = #('N/A')
+	;   Simple = Simple0
+	).
 simplify_lookup_2(F0, F) :-
 	compound(F0), !,
 	F0 =.. [Name|Args0],
