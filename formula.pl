@@ -338,15 +338,18 @@ generalize_formula(Map, From, To) :-
 generalize_formula(_, Formula, Formula).
 
 
+generalize_sheet($(S), _, $(S)) :- !.
 generalize_sheet(S0, Map, S) :-
 	map_sheet(Map, F-T),
 	(   S0 == F
 	->  S = T
 	;   S = S0
 	).
+generalize_x($(X), _, $(X)) :- !.
 generalize_x(X0, Map, X) :-
 	map_x(Map, F-T),
 	generalize_cordinate(X0, F-T, X).
+generalize_y($(Y), _, $(Y)) :- !.
 generalize_y(Y0, Map, Y) :-
 	map_y(Map, F-T),
 	generalize_cordinate(Y0, F-T, Y).
