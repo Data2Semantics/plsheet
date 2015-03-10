@@ -1613,6 +1613,19 @@ lookup('HLOOKUP'(_,_,_,_)).
 		 *	       UTIL		*
 		 *******************************/
 
+%%	strip_dollar(+Term, -NoDollar) is det.
+%
+%	Recursively replace $(X) with X.
+
+strip_dollar(In, Out) :-
+	compound(In), !,
+	(   In = $(Plain)
+	->  Out = Plain
+	;   compound_name_arguments(In, Name, Args0),
+	    maplist(strip_dollar, Args0, Args),
+	    compound_name_arguments(Out, Name, Args)
+	).
+strip_dollar(In, In).
 
 %%	column_name(?Index, ?Name) is det.
 %
