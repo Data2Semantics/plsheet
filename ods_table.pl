@@ -986,7 +986,8 @@ cell(M:Sheet, X, Y, Value, Type, Formula, Style, Annot) :-
 %
 %	Evaluate an expression.
 
-ods_eval(Module:Expression, Value) :-
+ods_eval(Module:Expression0, Value) :-
+	strip_dollar(Expression0, Expression),
 	ods_eval(Expression, Value, Module).
 
 ods_eval(cell(Sheet,X,Y), Value, Module) :- !,
