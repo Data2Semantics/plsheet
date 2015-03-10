@@ -183,17 +183,22 @@ ods_ensure_loaded(URI, Module) :-
 %%	cell_id(-X, -Y, +ID) is det.
 
 cell_id(X, Y, ID) :-
-	nonvar(X), nonvar(Y), !,
-	(   integer(X)
-	->  ID is Y*10000+X
-	;   upcase_atom(X, XU),
-	    column_name(I, XU),
-	    ID is Y*10000+I
-	).
-cell_id(X, Y, ID) :-
 	nonvar(ID), !,
 	Y is ID//10000,
 	X is ID mod 10000.
+cell_id(X, Y, ID) :-
+	nonvar(X), nonvar(Y), !,
+	no_dollar(X, X1),
+	no_dollar(Y, Y1),
+	(   integer(X1)
+	->  ID is Y1*10000+X1
+	;   upcase_atom(X1, XU),
+	    column_name(I, XU),
+	    ID is Y1*10000+I
+	).
+
+no_dollar(X0, X) :- nonvar(X0), X0 = $(X1), !, X = X1.
+no_dollar(X, X).
 
 load_tables(DOM, Module) :-
 	forall(xpath(DOM, //'table:table'(@'table:name'=Name,
@@ -776,8 +781,13 @@ subtable_cell(Cell) -->
 subtable_cell(Sheet) -->
 	sheet_name(Sheet).
 
+sheet_name($(Name)) -->
+	"$", !,
+	sheet_name2(Name).
 sheet_name(Name) -->
-	( "$" ->  "" ; "" ),
+	sheet_name2(Name).
+
+sheet_name2(Name) -->
 	(   single_quoted(Name)
 	;   sheet_name_code(C0),
 	    sheet_name_codes(Codes)
@@ -792,8 +802,10 @@ cell(X, Y) -->
 	column(X),
 	row(Y).
 
+column($(Col)) -->
+	"$", !,
+	coln(0, Col).
 column(Col) -->
-	( "$" ->  "" ; "" ),
 	coln(0, Col).
 
 coln(C0, C) -->
@@ -804,8 +816,10 @@ coln(C0, C) -->
 	coln(C1, C).
 coln(C, C) --> "".
 
+row($(Row)) -->
+	"$", !,
+	rown(0, Row).
 row(Row) -->
-	( "$" ->  "" ; "" ),
 	rown(0, Row).
 
 rown(R0, R) -->
