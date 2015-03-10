@@ -399,6 +399,10 @@ column_print_name(X, C) :-
 column_print_name(X, C) :-
 	integer(X), !,
 	column_name(X, C).
+column_print_name($(X), C) :-
+	integer(X), !,
+	column_name(X, C0),
+	atom_concat($, C0, C).
 column_print_name(X, X).
 
 row_print_name(Y, R) :-
