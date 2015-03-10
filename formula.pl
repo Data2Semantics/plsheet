@@ -253,7 +253,10 @@ ds_formula(Formula, [Formula|FL], FL).		% TBD
 
 %%	range_formula(+Spec, +F, -FDS) is semidet.
 
-					% y...
+range_formula(_Spec, F, FDS) :-
+	ground(F), !,
+	FDS = F.
+						% y...
 range_formula(y(Y,Ya,Ya), cell(S,X,YF), cell(S,X,Ys)) :-
 	findall(YF, Y=Ya, [Ys]), !.
 range_formula(y(Y,Ya,Ya), cell_range(S,Xs,YFs,Xe,YFe),
