@@ -487,7 +487,8 @@ traverse_input_graph([Cell0|CellT], Visited0, Edges, ETail) :-
 	traverse_input_graph(NewInputs, Visited1, Tail0, ETail).
 
 inputs(cell(Sheet,X,Y), Inputs) :-
-	cell_formula(Sheet, X, Y, Formula), !,
+	cell_formula(Sheet, X, Y, Formula0), !,
+	strip_dollar(Formula0, Formula),
 	Sheet = M:_,
 	formula_cells(Formula, M, Inputs, []).
 inputs(_, []).
