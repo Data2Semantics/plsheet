@@ -22,6 +22,8 @@
 	    sheet_name_need_quotes/1,	% +SheetName
 	    ods_reference//2,		% -Expr, +Table
 
+	    strip_dollar/2,		% +ExpressionIn,-ExpressionOut
+
 	    eval_lookup/4,		% +Lookup, -Value, +Module, -TargetCell
 	    simplify_lookup/2           % +Lookup, -Simple
 	  ]).
