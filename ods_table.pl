@@ -1281,7 +1281,8 @@ eval_lookup('VLOOKUP'(VExpr, DataSource, ColExpr), Value, M, Target) :- !,
 	Target = cell(Sheet,TX,TY).
 
 eval_lookup('VLOOKUP'(VExpr, DataSource, ColExpr, Sorted), Value, M, Target) :- !,
-	(   ods_eval(Sorted, @false, M)
+%	(   ods_eval(Sorted, @false, M)
+	(Sorted == 0
 	->  ods_eval(VExpr, V, M),
 	    (	DataSource = cell_range(Sheet, SX,SY, EX,EY)
 	    ->	(   ods_eval_typed(ColExpr, integer, Column, M),
@@ -1316,7 +1317,8 @@ eval_lookup('HLOOKUP'(VExpr, DataSource, RowExpr), Value, M, Target) :- !,
 	Target = cell(Sheet,TX,TY).
 
 eval_lookup('HLOOKUP'(VExpr, DataSource, ColExpr, Sorted), Value, M, Target) :- !,
-	(   ods_eval(Sorted, @false, M)
+%	(   ods_eval(Sorted, @false, M)
+	(Sorted == 0
 	->  ods_eval(VExpr, V, M),
 	    (	DataSource = cell_range(Sheet, SX,SY, EX,EY)
 	    ->	(   ods_eval_typed(ColExpr, integer, Column, M),
