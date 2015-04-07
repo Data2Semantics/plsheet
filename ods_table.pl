@@ -1588,14 +1588,14 @@ ods_add(#(E), _, #(E)) :- !.
 simplify_lookup(Lookup, Simple) :-
 	simplified_lookup(Lookup, Simple), !.
 simplify_lookup(Lookup, Simple) :-
-	strip_dollar(Lookup, Lookup1),
-	simplify_lookup_2(Lookup1, Simple),
+	simplify_lookup_2(Lookup, Simple),
 	assertion(ground(Simple)),
 	asserta(simplified_lookup(Lookup, Simple)).
 
 simplify_lookup_2(Lookup,Simple) :-
-	lookup(Lookup),
-	eval_lookup(Lookup,Value,user,Simple0), !,
+	lookup(Lookup),!,
+	strip_dollar(Lookup, Lookup1),
+	eval_lookup(Lookup1,Value,user,Simple0),
 	(   Value == #('N/A')
 	->  Simple = #('N/A')
 	;   Simple = Simple0
