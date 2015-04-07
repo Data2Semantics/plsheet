@@ -4,7 +4,9 @@
 	    ds_formulas/2,		% +Formulas, -DSFormulas
 	    generalize_formula/8,	% +S0, +X0, +Y0, +F0, -S, -X, -Y, -F
 	    sheet_dependency_graph/2,	% :Sheet, -DepGraph
-	    cell_dependency_graph/5	% :Sheet, +X, +Y, +Direction, -Graph
+	    cell_dependency_graph/5,	% :Sheet, +X, +Y, +Direction, -Graph
+	    cell_dependency/3,          % :Sheet, ?Cell, -Inputs
+	    group_dependency/4          % :Sheet, +Groups,  ?Group, -Inputs
 	  ]).
 :- use_module(library(record)).
 :- use_module(library(clpfd), except([transpose/2])).
@@ -26,7 +28,9 @@
 	sheet_ds_formulas(:, -),
 	sheet_formula_groups(:, -,-),
 	sheet_dependency_graph(:, -),
-	cell_dependency_graph(:,+,+,+,-).
+	cell_dependency_graph(:,+,+,+,-),
+	cell_dependency(:,+,?),
+	group_dependency(:,+,?,-).
 
 /** <module> Reason about formulas
 
