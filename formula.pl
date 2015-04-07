@@ -396,7 +396,10 @@ simplify_formula(F, F).
 %	Nodes in the cells are terms cell(S,X,Y).
 
 sheet_dependency_graph(Sheet, Graph) :-
-	findall(Cell-Dep, merged_cell_dependency(Sheet, Cell, Dep), Graph0),
+	sheet_ds_formulas(Sheet,Groups),
+	findall(Node-Inputs,
+		group_dependency(Sheet,Groups,Node,Inputs),
+		Graph0),
 	sort(Graph0, Graph1),
 	pairs_keys_values(Graph1, Left, RightSets),
 	append(RightSets, Right0),
@@ -407,7 +410,14 @@ sheet_dependency_graph(Sheet, Graph) :-
 	ord_union(Graph1, SourceTerms, Graph2),
 	transpose(Graph2, Graph).
 
-pair_nil(X, X-[]).
+pair_nil(X,X-[]).
+
+group_dependency(Sheet,Groups,Node,Inputs):-
+	Sheet = M:_,
+	member(Node = GenFormula,Groups),
+	formula_cells(GenFormula,M, Inputs0, []),
+	sort(Inputs0, Inputs).
+
 
 cell_dependency(Sheet, cell(Sheet,X,Y), Inputs) :-
 	Sheet = M:_,
@@ -416,20 +426,19 @@ cell_dependency(Sheet, cell(Sheet,X,Y), Inputs) :-
 	formula_cells(Simple, M, Inputs0, []),
 	sort(Inputs0, Inputs).
 
-%merge_copy_range(Groups,cell(S,X,Y),CopyRange):-
 
-merge_copy_range(cell(S,X,Y),CopyRange):-
-	sheet_ds_formulas(_,Groups),
-	member(Group,Groups),
-	arg(1,Group,cell_range(S,SX,EX,SY,EY)),
-	CopyRange = cell_range(S,SX,EX,SY,EY),
+merged_cell_dependency(Groups, cell(_,X,Y), MergedCell,MergedInputs):-
+	cell_dependency(cell(_,X,Y), Inputs0),
+	merge_copy_range(Groups,cell(_,X,Y), MergedCell),
+	maplist(merge_copy_range(Groups),Inputs0,MergedInputs).
+
+
+
+merge_copy_range(Groups, cell(_S,X,Y),CopyRange):-
+%	(   Y  > 9 -> trace ; true),
+	member(CopyRange = _,Groups),
 	ds_inside(CopyRange,X,Y),!.
-merge_copy_range(C0,C):-
-	compound(C0), !,
-	C0 =.. [Name|Args0],
-	maplist(merge_copy_range, Args0, Args),
-	C =.. [Name|Args].
-merge_copy_range(C,C).
+merge_copy_range(_, C,C).
 
 
 
@@ -439,15 +448,7 @@ merge_copy_range(C,C).
 formula_cells(cell(S,X,Y), M, [cell(M:S,X,Y)|T], T) :- !.
 formula_cells(DataSource, M,  Cells, Rest) :-
 	DataSource = cell_range(S,SX,SY,EX,EY), !,
-	debug(dep, 'DataSource: ~q', [DataSource]),
-	(   forall(ds_inside(DataSource,X,Y),
-		   \+ cell_formula(M:S,X,Y,_))
-	->  debug(dep, 'DataSource without formulas: ~p', [DataSource]),
-	    Cells = [cell_range(M:S,SX,SY,EX,EY)|Rest]
-	;   debug(nodep, 'DataSource with formulas: ~p', [DataSource]),
-	    findall(cell(M:S,X,Y), ds_inside(DataSource,X,Y), Cells, Rest)
-	).
-
+	Cells = [cell_range(M:S,SX,SY,EX,EY)|Rest].
 formula_cells(ext(URL, DS), _M, Cells, Cells) :- !,
 	debug(dep, 'External ref: ~p ~p', [URL, DS]).
 formula_cells(Compound, M, Cells, Rest) :-
