@@ -51,8 +51,9 @@ sheet_ds_formulas(Sheet, DSFormulas) :-
 %%	sheet_formula_groups(:Sheet, -Groups, -Singles) is det.
 
 sheet_formula_groups(Sheet, Groups, Singles) :-
-	findall(f(Sheet,X,Y,F),
-		cell_formula(Sheet, X, Y, F),
+	findall(f(Sheet,X,Y,Simple),
+		(   cell_formula(Sheet, X, Y, F),
+		    simplify_lookup(F,Simple)),
 		Formulas),
 	length(Formulas, Count),
 	debug(formula, '~q: Found ~D formulas', [Sheet, Count]),
