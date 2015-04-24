@@ -68,8 +68,12 @@ sheet_formula_groups(Sheet, Groups, Singles) :-
 	debug(formula, '~D candidate groups', [CCount]),
 	concurrent_maplist(make_groups,
 			   CandidateGroups, NestedGroups, NestedSingles),
-	append(NestedGroups, Groups),
-	append(NestedSingles, Singles).
+	append(NestedGroups, Groups), kill_constraints(Groups),
+	append(NestedSingles, Singles), kill_constraints(Singles).
+
+kill_constraints(Term) :-
+	term_attvars(Term, AttVars),
+	maplist(del_attrs, AttVars).
 
 make_groups([], [], []).
 make_groups([F0|FT], Groups, Singles) :-
