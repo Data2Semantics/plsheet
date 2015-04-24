@@ -150,8 +150,9 @@ group([S], Xs, Ys, P, Matches, Groups) :- !,
 	;   findall(G, (member(Y,Ys), make_group(P, Matches, G)), NGroups)
 	),
 	append(NGroups, Groups).
-group(Ss, Xs, Ys, P, Matches, Groups) :-
-	findall(G, (member(S,Ss), group([S],Xs,Ys,P,Matches,G)), NGroups),
+group(Ss, _Xs, _Ys, P, Matches, Groups) :-
+	P = f(S,_,_,_),
+	findall(G, (member(S,Ss), make_group(P, Matches, G)), NGroups),
 	append(NGroups, Groups).
 
 %%	compress(+List, -Description)
