@@ -124,7 +124,17 @@ group([S], Xs, Ys, f(S,X,Y,F), Matches,
 	       memberchk(f(S,X,Y,_), Matches)), !,
 	compress(Xs, SetX),
 	compress(Ys, SetY).
-group([S], Xs, Ys, P, Matches, Groups) :-
+group(Ss, Xs, Ys, f(S,X,Y,F), Matches,
+      [forall(workbook, [S in Ss, X in SetX, Y in SetY], f(S,X,Y,F))]) :-
+	Ss = [_,_|_],
+	forall(( member(S, Ss),
+		 member(X,Xs),
+		 member(Y,Ys)
+	       ),
+	       memberchk(f(S,X,Y,_), Matches)), !,
+	compress(Xs, SetX),
+	compress(Ys, SetY).
+group([S], Xs, Ys, P, Matches, Groups) :- !,
 	P = f(S,X,Y,_),
 	length(Xs, Xc),
 	length(Ys, Yc),
@@ -132,6 +142,9 @@ group([S], Xs, Ys, P, Matches, Groups) :-
 	->  findall(G, (member(X,Xs), make_group(P, Matches, G)), NGroups)
 	;   findall(G, (member(Y,Ys), make_group(P, Matches, G)), NGroups)
 	),
+	append(NGroups, Groups).
+group(Ss, Xs, Ys, P, Matches, Groups) :-
+	findall(G, (member(S,Ss), group([S],Xs,Ys,P,Matches,G)), NGroups),
 	append(NGroups, Groups).
 
 %%	compress(+List, -Description)
