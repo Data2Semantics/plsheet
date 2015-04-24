@@ -404,15 +404,19 @@ sheet_dependency_graph(Sheet, Graph) :-
 	findall(Node-Inputs,
 		group_dependency(Sheet,Groups,Node,Inputs),
 		Graph0),
-	sort(Graph0, Graph1),
+%	findall(Cell-Dep,
+%		cell_dependency(Sheet,Cell,Dep),
+%		Graph0),
+	maplist(strip_dollar,Graph0,Graph1),
+	sort(Graph1, Graph2),
 	pairs_keys_values(Graph1, Left, RightSets),
 	append(RightSets, Right0),
 	sort(Right0, Right),
 	                                   % Add missing (source) nodes
 	ord_subtract(Right, Left, Sources),
 	maplist(pair_nil, Sources, SourceTerms),
-	ord_union(Graph1, SourceTerms, Graph2),
-	transpose(Graph2, Graph).
+	ord_union(Graph2, SourceTerms, Graph3),
+	transpose(Graph3, Graph).
 
 pair_nil(X,X-[]).
 
