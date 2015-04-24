@@ -104,7 +104,10 @@ make_group(P, Matches, Groups) :-
 	maplist(arg(1), Bindings, AllSheets), sort(AllSheets, Sheets),
 	maplist(arg(2), Bindings, AllXs),     sort(AllXs, Xs),
 	maplist(arg(3), Bindings, AllYs),     sort(AllYs, Ys),
-	group(Sheets, Xs, Ys, P, Matches, Groups0),
+	(   group(Sheets, Xs, Ys, P, Matches, Groups0)
+	->  true
+	;   gtrace, group(Sheets, Xs, Ys, P, Matches, Groups0)
+	),
 	flatten(Groups0, Groups).
 
 group([S], [X], [Y], P, _, Result) :- !,
