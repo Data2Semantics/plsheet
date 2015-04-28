@@ -2,6 +2,7 @@
 	  [ sheet_ds_formulas/2,	% :Sheet, -DSFormulas
 	    sheet_formula_groups/3,	% :Sheet, -Groups, -Singles
 	    ds_formulas/2,		% +Formulas, -DSFormulas
+	    group_formula/2,		% +Group, -Grounded
 	    generalize_formula/8,	% +S0, +X0, +Y0, +F0, -S, -X, -Y, -F
 	    sheet_dependency_graph/2,	% :Sheet, -DepGraph
 	    cell_dependency_graph/5,	% :Sheet, +X, +Y, +Direction, -Graph
@@ -199,9 +200,11 @@ create_ranges([H|T0], [H|T]) :-
 	create_ranges(T0, T).
 
 range(Low, [Next|T0], High, T) :-
+	integer(Low), integer(Next),
 	succ(Low, Next), !,
 	range(Next, T0, High, T).
-range(High, T, High, T).
+range(High, T, High, T) :-
+	integer(High).
 
 
 %%	ds_formulas(+Formulas:list, -DSFormulas:list) is det.
@@ -440,6 +443,115 @@ simplify_formula(F0, F) :-
 	maplist(simplify_formula, Args0, Args),
 	F =.. [Name|Args].
 simplify_formula(F, F).
+
+%%	group_formula(+Group, -Formula)
+%
+%	Materialize  a  group,  describing  the   formula  similarly  as
+%	sheet_ds_formulas/2, but using a node representation that is not
+%	limited to rectangular areas.  The node representation is one of
+%
+%	  - cell(Sheet,Xs,Y)
+%	  - cell(Sheet,X,Ys)
+%	  - cell(Sheets,X,Y)
+%	  - cell_range(Sheets,SX,EX,SY,EY)
+
+group_formula(f(S,X,Y,F), cell(S,X,Y) = F).
+group_formula(forall(What, In, f(S,X,Y,F)),
+	      Target = Formula) :-
+	ground_formula(What, In, f(S,X,Y,cell(S,X,Y)), Target),
+	ground_formula(What, In, f(S,X,Y,F), Formula).
+
+ground_formula(What, In, f(S,X,Y,F0), Formula) :-
+	target(F0), !,
+	(   ground_target(F0, What, In, f(S,X,Y,F0), Formula)
+	->  true
+	;   gtrace,
+	    ground_target(F0, What, In, f(S,X,Y,F0), Formula)
+	).
+ground_formula(What, In, f(S,X,Y,F0), F) :-
+	compound(F0), !,
+	F0 =.. [Name|Args0],
+	ground_formulas(Args0, What, In, f(S,X,Y), Args),
+	F  =.. [Name|Args].
+ground_formula(_, _, f(_,_,_,F), F).
+
+target(cell(_,_,_)).
+target(cell_range(_,_,_,_,_)).
+
+ground_formulas([], _, _, _, []).
+ground_formulas([H0|T0], What, In, f(S,X,Y), [H|T]) :-
+	ground_formula(What, In, f(S,X,Y,H0), H),
+	ground_formulas(T0, What, In, f(S,X,Y), T).
+
+ground_target(cell(S,Xc,Y), col, X in Xs, f(_,X,_,_), cell(S,Xcs,Y)) :- !,
+	materialize(Xs, X, Xc, Xcs).
+ground_target(cell(S,X,Yc), row, Y in Ys, f(_,_,Y,_), cell(S,X,Ycs)) :- !,
+	materialize(Ys, Y, Yc, Ycs).
+ground_target(cell(Sc,X,Y), sheet, S in Ss, f(S,_,_,_), cell(Scs,X,Y)) :- !,
+	materialize(Ss, S, Sc, Scs).
+ground_target(cell(S,Xc,Yc), area, [X in Xs, Y in Ys], f(_,X,Y,_),
+	      cell(S,Xcs,Ycs)) :- !,
+	materialize(Xs, X, Xc, Xcs),
+	materialize(Ys, Y, Yc, Ycs).
+ground_target(cell(Sc,Xc,Yc), workbook, [S in Ss, X in Xs, Y in Ys], f(S,X,Y,_),
+	      cell(Scs,Xcs,Ycs)) :- !,
+	materialize(Ss, S, Sc, Scs),
+	materialize(Xs, X, Xc, Xcs),
+	materialize(Ys, Y, Yc, Ycs).
+ground_target(cell_range(S,Xac,Ya,Xzc,Yz), col, X in Xs, f(_,X,_,_),
+	      cell_range(S,Xas,Ya,Xzs,Yz)) :- !,
+	materialize(Xs, X, Xac, Xas),
+	materialize(Xs, X, Xzc, Xzs).
+ground_target(cell_range(S,Xa,Yac,Xz,Yzc), row, Y in Ys, f(_,_,Y,_),
+	      cell_range(S,Xa,Yas,Xz,Yzs)) :- !,
+	materialize(Ys, Y, Yac, Yas),
+	materialize(Ys, Y, Yzc, Yzs).
+ground_target(cell_range(S,Xac,Yac,Xzc,Yzc), area, [X in Xs, Y in Ys], f(_,X,Y,_),
+	      cell_range(S,Xas,Yas,Xzs,Yzs)) :- !,
+	materialize(Xs, X, Xac, Xas),
+	materialize(Xs, X, Xzc, Xzs),
+	materialize(Ys, Y, Yac, Yas),
+	materialize(Ys, Y, Yzc, Yzs).
+ground_target(cell_range(Sc,Xac,Yac,Xzc,Yzc),
+	      workbook, [S in Ss, X in Xs, Y in Ys], f(S,X,Y,_),
+	      cell_range(Scs,Xas,Yas,Xzs,Yzs)) :- !,
+	materialize(Ss, S, Sc, Scs),
+	materialize(Xs, X, Xac, Xas),
+	materialize(Xs, X, Xzc, Xzs),
+	materialize(Ys, Y, Yac, Yas),
+	materialize(Ys, Y, Yzc, Yzs).
+
+materialize(Domain, Var, Values, Materialized) :-
+	materialize2(Domain, Var, Values, Materialized0),
+	simplify_domain(Materialized0, Materialized).
+
+materialize2([], _, _, []).
+materialize2([H0|T0], V, Vc, [H|T]) :-
+	(   H0 = (S-E)
+	->  H = (Sh-Eh),
+	    findall(Vc, (V=S;V=E), [Sh,Eh])
+	;   findall(Vc, V=H0, [H])
+	),
+	materialize2(T0, V, Vc, T).
+
+simplify_domain(Domain0, Domain) :-
+	phrase(expand(Domain0), Domain1),
+	compress(Domain1, Domain2),
+	(   Domain2 = [One]
+	->  Domain = One
+	;   Domain = Domain2
+	).
+
+expand([])    --> !, [].
+expand([H|T]) --> !, expand(H), expand(T).
+expand(F-T)   --> !, numlist(F,T).
+expand(One)   --> [One].
+
+numlist(T,T) --> !, [T].
+numlist(F,T) --> [F], {F2 is F+1}, numlist(F2,T).
+
+
+
 
 %%	sheet_dependency_graph(:Sheet, -UGraph) is det.
 %
