@@ -49,6 +49,35 @@ sheet_ds_formulas(Sheet, DSFormulas) :-
 	sort(DSFormulas0, DSFormulas).
 
 %%	sheet_formula_groups(:Sheet, -Groups, -Singles) is det.
+%
+%	Group formulas that have the same   structure.  Each group is of
+%	this form:
+%
+%	    forall(What, In, f(Sheet,X,Y,Formula))
+%
+%	The What/In pairs describe the spatial   relation  of the group.
+%	Provided pairs are:
+%
+%	  - col, X in Xs
+%	  Repeat a formula over multiple columns
+%	  - row, Y in Ys
+%	  Repeat a formula over multiple rows
+%	  - sheet, S in Sheets
+%	  Repeat a formula over multiple sheets
+%	  - area, [ X in Xs, Y in Ys ]
+%	  Repeat a formula over a rectangular area
+%	  - workbook, [ S in Sheets, X in Xs, Y in Ys ]
+%	  Repeat a formula over multiple sheets over an area
+%
+%	In the above, `Sheets` is a list   of sheet names and `Xs`, `Ys`
+%	is a list of integers or pairs `Low-High`, e.g., [1, 5-10] means
+%	the X/Y values `1,5,6,7,8,9,10`.
+%
+%	In general, the terms contain   clpfd  _constraints_ between the
+%	X/Y variables and cells or cell-ranges appearing in the formula.
+%	The  corresponding  formula  with  concrete  cell  addresses  is
+%	obtained by binding  the  X  and   Y  values,  which  cause  the
+%	constraints to be propagated to materialize the cell addresses.
 
 sheet_formula_groups(QSheet, Groups, Singles) :-
 %	findall(f(Sheet,X,Y,Simple),
