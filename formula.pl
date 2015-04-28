@@ -420,11 +420,31 @@ sheet_dependency_graph(Sheet, Graph) :-
 
 pair_nil(X,X-[]).
 
-group_dependency(Sheet,Groups,Node,Inputs):-
+ds_dependency(Sheet,Groups,Node,Inputs):-
 	Sheet = M:_,
 	member(Node = GenFormula,Groups),
 	formula_cells(GenFormula,M, Inputs0, []),
 	sort(Inputs0, Inputs).
+
+
+
+
+
+
+
+get_op(F, F0):-
+	F0 =eval(_),!,
+	F0 =.. [Name|Args0],
+	maplist(get_op, Args0, Args),
+	F =.. [Name|Args].
+get_op2(F, Op):-
+	F =cell(_,_,_),!,
+	Op = 'Cell'.
+get_op2(_, Op):-
+	Op = 'Math'.
+
+
+
 
 
 cell_dependency(Sheet, cell(Sheet,X,Y), Inputs) :-
