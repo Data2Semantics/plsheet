@@ -506,6 +506,9 @@ ground_target(cell_range(S,Xa,Yac,Xz,Yzc), row, Y in Ys, f(_,_,Y,_),
 	      cell_range(S,Xa,Yas,Xz,Yzs)) :- !,
 	materialize(Ys, Y, Yac, Yas),
 	materialize(Ys, Y, Yzc, Yzs).
+ground_target(cell_range(Sc,Xa,Ya,Xz,Yz), sheet, S in Ss, f(S,_,_,_),
+	      cell_range(Scs,Xa,Ya,Xz,Yz)) :- !,
+	materialize(Ss, S, Sc, Scs).
 ground_target(cell_range(S,Xac,Yac,Xzc,Yzc), area, [X in Xs, Y in Ys], f(_,X,Y,_),
 	      cell_range(S,Xas,Yas,Xzs,Yzs)) :- !,
 	materialize(Xs, X, Xac, Xas),
