@@ -457,9 +457,10 @@ simplify_formula(F, F).
 
 group_formula(f(S,X,Y,F), cell(S,X,Y) = F).
 group_formula(forall(What, In, f(S,X,Y,F)),
-	      Target = Formula) :-
+	      Target = Formula) :- !,
 	ground_formula(What, In, f(S,X,Y,cell(S,X,Y)), Target),
 	ground_formula(What, In, f(S,X,Y,F), Formula).
+group_formula(F, F).
 
 ground_formula(What, In, f(S,X,Y,F0), Formula) :-
 	target(F0), !,
