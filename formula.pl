@@ -457,9 +457,10 @@ simplify_formula(F, F).
 
 group_formula(f(S,X,Y,F), cell(S,X,Y) = F).
 group_formula(forall(What, In, f(S,X,Y,F)),
-	      Target = Formula) :-
+	      Target = Formula) :- !,
 	ground_formula(What, In, f(S,X,Y,cell(S,X,Y)), Target),
 	ground_formula(What, In, f(S,X,Y,F), Formula).
+group_formula(F, F).
 
 ground_formula(What, In, f(S,X,Y,F0), Formula) :-
 	target(F0), !,
@@ -506,6 +507,9 @@ ground_target(cell_range(S,Xa,Yac,Xz,Yzc), row, Y in Ys, f(_,_,Y,_),
 	      cell_range(S,Xa,Yas,Xz,Yzs)) :- !,
 	materialize(Ys, Y, Yac, Yas),
 	materialize(Ys, Y, Yzc, Yzs).
+ground_target(cell_range(Sc,Xa,Ya,Xz,Yz), sheet, S in Ss, f(S,_,_,_),
+	      cell_range(Scs,Xa,Ya,Xz,Yz)) :- !,
+	materialize(Ss, S, Sc, Scs).
 ground_target(cell_range(S,Xac,Yac,Xzc,Yzc), area, [X in Xs, Y in Ys], f(_,X,Y,_),
 	      cell_range(S,Xas,Yas,Xzs,Yzs)) :- !,
 	materialize(Xs, X, Xac, Xas),
