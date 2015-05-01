@@ -4,7 +4,8 @@
 	    ds_formulas/2,		% +Formulas, -DSFormulas
 	    group_formula/2,		% +Group, -Grounded
 	    generalize_formula/8,	% +S0, +X0, +Y0, +F0, -S, -X, -Y, -F
-	    sheet_dependency_graph/2,	% :Sheet, -DepGraph
+	    sheet_dependency_graph/2,	% :Sheet, -AggregatedGraph
+	    orig_dependency_graph/2,    % :Sheet, -Graph
 	    cell_dependency_graph/5,	% :Sheet, +X, +Y, +Direction, -Graph
 	    cell_dependency/3,          % :Sheet, ?Cell, -Inputs
 	    group_dependency/4          % :Sheet, +Groups,  ?Group, -Inputs
@@ -29,6 +30,7 @@
 	sheet_ds_formulas(:, -),
 	sheet_formula_groups(:, -,-),
 	sheet_dependency_graph(:, -),
+	orig_dependency_graph(:, -),
 	cell_dependency_graph(:,+,+,+,-),
 	cell_dependency(:,+,?),
 	group_dependency(:,+,?,-).
@@ -563,16 +565,36 @@ numlist(F,T) --> [F], {F2 is F+1}, numlist(F2,T).
 %	Nodes in the cells are terms cell(S,X,Y).
 
 sheet_dependency_graph(Sheet, Graph) :-
-	sheet_ds_formulas(Sheet,Groups),
+	sheet_formula_groups(Sheet, Groups, Singles0),
+	append(Groups, Plain0),
+	strip_dollar(Plain0, Plain),
+	maplist(group_formula, Plain, PlainGroups),
+	strip_dollar(Singles0, Singles),
+	append(Singles,PlainGroups,Results),
 	findall(Node-Inputs,
-		group_dependency(Sheet,Groups,Node,Inputs),
+		group_dependency(Sheet,Results,Node,Inputs),
 		Graph0),
 %	findall(Cell-Dep,
 %		cell_dependency(Sheet,Cell,Dep),
 %		Graph0),
+%	maplist(strip_dollar,Graph0,Graph1),
+	sort(Graph0, Graph1),
+	pairs_keys_values(Graph1, Left, RightSets),
+	append(RightSets, Right0),
+	sort(Right0, Right),
+	                                   % Add missing (source) nodes
+	ord_subtract(Right, Left, Sources),
+	maplist(pair_nil, Sources, SourceTerms),
+	ord_union(Graph1, SourceTerms, Graph2),
+	transpose(Graph2, Graph).
+
+orig_dependency_graph(Sheet, Graph) :-
+	findall(Cell-Dep,
+		cell_dependency(Sheet,Cell,Dep),
+		Graph0),
 	maplist(strip_dollar,Graph0,Graph1),
 	sort(Graph1, Graph2),
-	pairs_keys_values(Graph1, Left, RightSets),
+	pairs_keys_values(Graph2, Left, RightSets),
 	append(RightSets, Right0),
 	sort(Right0, Right),
 	                                   % Add missing (source) nodes
@@ -580,6 +602,7 @@ sheet_dependency_graph(Sheet, Graph) :-
 	maplist(pair_nil, Sources, SourceTerms),
 	ord_union(Graph2, SourceTerms, Graph3),
 	transpose(Graph3, Graph).
+
 
 pair_nil(X,X-[]).
 
@@ -589,10 +612,44 @@ ds_dependency(Sheet,Groups,Node,Inputs):-
 	formula_cells(GenFormula,M, Inputs0, []),
 	sort(Inputs0, Inputs).
 
+group_dependency(Sheet,Results,Node,Inputs):-
+	member(Result, Results),
+	(   Result = (Node = GenFormula)
+	->  group_inputs(GenFormula,Inputs0, [])
+	;   Result = f(Sheet,X,Y,Formula)
+	->  Node = cell(Sheet,X,Y),
+	    group_inputs(Formula,Inputs0, [])
+	),
+	sort(Inputs0, Inputs).
 
 
+% Copied from formula_cells but added but using a node representation that is not
+% limited to rectangular areas. See group_formula
 
+group_inputs(cell(S,X,Y),[cell(S,X,Y)|T], T) :- !.
+group_inputs(cell([S0|S],X,Y), [cell([S0|S],X,Y)|T], T) :- !.
+group_inputs(cell([S0|S],[X0-X],Y), [cell([S0|S],[X0-X],Y)|T], T) :- !.
+group_inputs(cell([S0|S],X,[Y0-Y]),[cell([S0|S],X,[Y0-Y])|T], T) :- !.
+group_inputs(cell([S0|S],[X0-X],[Y0-Y]), [cell([S0|S],[X0-X],[Y0-Y])|T], T) :- !.
+group_inputs(cell(S,[X0-X],Y), [cell(S,[X0-X],Y)|T], T) :- !.
+group_inputs(cell(S,X,[Y0-Y]), [cell(S,X,[Y0-Y])|T], T) :- !.
+group_inputs(cell(S,[X0-X],[Y0-Y]), [cell(S,[X0-X],[Y0-Y])|T], T) :- !.
 
+group_inputs(DataSource, Cells, Rest) :-
+	DataSource = cell_range(S,SX,SY,EX,EY), !,
+	Cells = [cell_range(S,SX,SY,EX,EY)|Rest].
+group_inputs(ext(URL, DS), Cells, Cells) :- !,
+	debug(dep, 'External ref: ~p ~p', [URL, DS]).
+group_inputs(Compound, Cells, Rest) :-
+	compound(Compound), !,
+	Compound =.. [_|Args],
+	list_inputs(Args, Cells, Rest).
+group_inputs(_, Cells, Cells).
+
+list_inputs([], Cells, Cells).
+list_inputs([H|T], Cells, Rest) :-
+	group_inputs(H, Cells, Rest0),
+	list_inputs(T, Rest0, Rest).
 
 
 get_op(F, F0):-
