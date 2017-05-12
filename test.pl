@@ -6,12 +6,13 @@
 :- use_module(labels).
 :- use_module(formula).
 :- use_module(varnames).
-:- use_module(webui).
+%:- use_module(webui).
 :- use_module(library(debug)).
 :- use_module(library(graphml_ugraph)).	% ?- pack_install(graphml).
+:- load_files('/home/mvs246/src/swish/ide.pl').
 
 :- initialization
-	start_server.
+	swish_ide:swish(localhost:3050).
 
 :- dynamic
 	server_url/1.
