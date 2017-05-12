@@ -5,11 +5,15 @@
 	    group_formula/2,		% +Group, -Grounded
 	    generalize_formula/8,	% +S0, +X0, +Y0, +F0, -S, -X, -Y, -F
 	    sheet_dependency_graph/2,	% :Sheet, -AggregatedGraph
+	    sheet_dependency_graph/3,	% :Sheet, unTransposedGraph,-TransposedGraph
 	    orig_dependency_graph/2,    % :Sheet, -Graph
+	    orig_no_copy_graph/2,       % :Sheet, -Graph,
 	    cell_dependency_graph/5,	% :Sheet, +X, +Y, +Direction, -Graph
 	    cell_dependency/3,          % :Sheet, ?Cell, -Inputs
-	    group_dependency/4          % :Sheet, +Groups,  ?Group, -Inputs
+	    group_dependency/4,         % :Sheet, +Groups,  ?Group, -Inputs
+	    intermed_result/2           % +Graph, -Sink
 	  ]).
+
 :- use_module(library(record)).
 :- use_module(library(clpfd), except([transpose/2])).
 :- use_module(library(ugraphs)).
@@ -30,10 +34,13 @@
 	sheet_ds_formulas(:, -),
 	sheet_formula_groups(:, -,-),
 	sheet_dependency_graph(:, -),
+	sheet_dependency_graph(:, -, -),
 	orig_dependency_graph(:, -),
+	orig_no_copy_graph(:, -),
 	cell_dependency_graph(:,+,+,+,-),
 	cell_dependency(:,+,?),
-	group_dependency(:,+,?,-).
+	group_dependency(:,+,?,-),
+	intermed_result(+,-).
 
 /** <module> Reason about formulas
 
@@ -83,14 +90,14 @@ sheet_ds_formulas(Sheet, DSFormulas) :-
 %	constraints to be propagated to materialize the cell addresses.
 
 sheet_formula_groups(QSheet, Groups, Singles) :-
-%	findall(f(Sheet,X,Y,Simple),
-%		(   cell_formula(Sheet, X, Y, F),
-%		    simplify_lookup(F,Simple)),
-%		Formulas),
 	QSheet = _:Sheet,
-	findall(f(Sheet,X,Y,F),
-		cell_formula(Sheet, X, Y, F),
+	findall(f(Sheet,X,Y,Simple),
+		(   cell_formula(Sheet, X, Y, F),
+		    simplify_lookup(F,Simple)),
 		Formulas),
+%	findall(f(Sheet,X,Y,F),
+%		cell_formula(Sheet, X, Y, F),
+%		Formulas),
 	length(Formulas, Count),
 	debug(formula, '~q: Found ~D formulas', [Sheet, Count]),
 	map_list_to_pairs(skolem_formula, Formulas, Keyed),
@@ -574,19 +581,128 @@ sheet_dependency_graph(Sheet, Graph) :-
 	findall(Node-Inputs,
 		group_dependency(Sheet,Results,Node,Inputs),
 		Graph0),
-%	findall(Cell-Dep,
-%		cell_dependency(Sheet,Cell,Dep),
-%		Graph0),
-%	maplist(strip_dollar,Graph0,Graph1),
 	sort(Graph0, Graph1),
-	pairs_keys_values(Graph1, Left, RightSets),
+	findall(Node-Original,
+		find_copy_node(Results,Node,Original),
+		Replacements),
+	maplist(replace_copy(Replacements),Graph1,Graph2),
+	pairs_keys_values(Graph2, Left, RightSets),
 	append(RightSets, Right0),
 	sort(Right0, Right),
 	                                   % Add missing (source) nodes
 	ord_subtract(Right, Left, Sources),
 	maplist(pair_nil, Sources, SourceTerms),
+	ord_union(Graph2, SourceTerms, Graph3),
+	transpose(Graph3, Graph4),
+	sort(Graph4,Graph).
+
+sheet_dependency_graph(Sheet, Graph1, Graph) :-
+	sheet_formula_groups(Sheet, Groups, Singles0),
+	append(Groups, Plain0),
+	strip_dollar(Plain0, Plain),
+	maplist(group_formula, Plain, PlainGroups),
+	strip_dollar(Singles0, Singles),
+	append(Singles,PlainGroups,Results),
+	findall(Node-Inputs,
+		group_dependency(Sheet,Results,Node,Inputs),
+		Graph0),
+%	findall(Cell-Dep,
+%		cell_dependency(Sheet,Cell,Dep),
+%		Graph0),
+%	maplist(strip_dollar,Graph0,Graph1),
+	transform_sheets(Graph0, Graph01),
+	transform_ranges(Graph01, Graph02),
+%	trace,
+	sort(Graph02, Graph1),
+	pairs_keys_values(Graph1, Left, RightSets),
+	append(RightSets, Right0),
+	sort(Right0, Right),
+	                                   % Add missing (source) nodes
+%	filter_overlap(Left, Left1),
+%	filter_overlap(Right1, Right),
+	new_subtract(Right, Left, Sources),
+	maplist(pair_nil, Sources, SourceTerms),
 	ord_union(Graph1, SourceTerms, Graph2),
 	transpose(Graph2, Graph).
+
+new_subtract(Right, Left, Sources):-
+	select_widest_cell_range(Right, Left, S1),
+	sort(S1, Sources).
+
+select_widest_cell_range([], _L, []):-!.
+select_widest_cell_range([C1|Rest], L, Rest1):-
+	member(C2, L),
+	range_included(C1, C2),!,
+	select_widest_cell_range(Rest, L, Rest1).
+select_widest_cell_range([C|Rest], L, [C|Rest1]):-
+	select_widest_cell_range(Rest, L, Rest1),!.
+
+range_included(C1, C2):-
+	C1 = cell(S, X1, Y1),
+	C2 = cell(S, X2, Y2),
+	inside(X1, X2),
+	inside(Y1, Y2),!.
+
+inside(_X, []):- fail,!.   %TBD even more complex comparisons, e.g. R1 and R2
+inside(X,X):-!.
+inside([],_X):-!.
+inside([F|T],  R):-!,
+	inside(F, R),
+	inside(T, R),!.
+inside(X, _Range):-
+	var(X),!.
+inside(X, X0-X1):-
+	X >= X0,
+	X =< X1,!.
+inside(A-B, X0-X1):-
+	A >= X0,
+	B =< X1,!.
+inside(A-B, [X0-X1|_Rest]):-
+	A >= X0,
+	B =< X1,!.
+inside(X, [X0-X1|_Rest]):-
+	X >= X0,
+	X =< X1,!.
+inside(X, [XL|_Rest]):-
+	member(X, XL) ,!.
+inside(X, [_|Rest]):-
+	inside(X, Rest).
+
+
+transform_ranges([], []):-!.
+transform_ranges([cell_range(S, X1, Y1, X1, Y2)|Rest],
+		 [cell(S, X1, Y1-Y2)|TRest]):-
+	transform_ranges(Rest, TRest),!.
+transform_ranges([cell_range(S, X1, Y1, X1, Y2)-D|Rest],
+		 [cell(S, X1, Y1-Y2)-D1|TRest]):-
+	transform_ranges(D, D1),
+	transform_ranges(Rest, TRest),!.
+transform_ranges([cell_range(S, X1, Y1, X2, Y2)-D|Rest],
+		 [cell(S, X1-X2, Y1-Y2)-D1|TRest]):-
+	transform_ranges(D, D1),
+	transform_ranges(Rest, TRest),!.
+transform_ranges([X-D|Rest], [X1-D1|TRest]):-
+	transform_ranges([X], [X1]),
+	transform_ranges(D, D1),
+	transform_ranges(Rest, TRest),!.
+transform_ranges([X|Rest], [X|TRest]):-
+	transform_ranges(Rest, TRest),!.
+
+transform_sheets([], []):-!.
+transform_sheets([C-D|Rest], SRest):-
+	C = cell(Sheet, _, _),
+	is_list(Sheet),!,
+	transform_sheets(Rest, Rest1),
+	findall(C1-D1, (member(S, Sheet),
+		        select_sheet(Sheet, S, C-D, C1-D1)), CL),
+	append(CL, Rest1, SRest),!.
+transform_sheets([C-D|Rest], [C-D|Rest1]):-
+	transform_sheets(Rest, Rest1),!.
+
+select_sheet(SList, Sheet, cell(SList, X, Y)-D, cell(Sheet, X, Y)-D1):-
+	maplist(select_sheet1(SList, Sheet), D, D1).
+select_sheet1(SList, Sheet, cell(SList, X, Y), cell(Sheet, X, Y)):-!.
+select_sheet1(SList, Sheet, cell_range(SList, X1, Y1, X2, Y2), cell(Sheet, X1-X2, Y1-Y2)):-!.
 
 orig_dependency_graph(Sheet, Graph) :-
 	findall(Cell-Dep,
@@ -603,6 +719,28 @@ orig_dependency_graph(Sheet, Graph) :-
 	ord_union(Graph2, SourceTerms, Graph3),
 	transpose(Graph3, Graph).
 
+orig_no_copy_graph(Sheet, Graph) :-
+	findall(Cell-Dep,
+		cell_dependency(Sheet,Cell,Dep),
+		Graph0),
+	maplist(strip_dollar,Graph0,Graph1),
+	sort(Graph1, Graph2),
+	findall(Cell-Original,
+		find_copy_cell(Cell,Original),
+		Replacements0),
+	maplist(strip_dollar,Replacements0,Replacements),
+	maplist(replace_copy(Replacements),Graph2,Graph3),
+	pairs_keys_values(Graph3, Left, RightSets),
+	append(RightSets, Right0),
+	sort(Right0, Right),
+	                                   % Add missing (source) nodes
+	ord_subtract(Right, Left, Sources),
+	maplist(pair_nil, Sources, SourceTerms),
+	ord_union(Graph3, SourceTerms, Graph4),
+	transpose(Graph4, Graph).
+
+
+
 
 pair_nil(X,X-[]).
 
@@ -612,7 +750,9 @@ ds_dependency(Sheet,Groups,Node,Inputs):-
 	formula_cells(GenFormula,M, Inputs0, []),
 	sort(Inputs0, Inputs).
 
-group_dependency(Sheet,Results,Node,Inputs):-
+group_dependency(Sheet1,Results,Node,Inputs):-
+	(   Sheet1 = _U:Sheet ->true    %added BJW
+	;   Sheet = Sheet1),
 	member(Result, Results),
 	(   Result = (Node = GenFormula)
 	->  group_inputs(GenFormula,Inputs0, [])
@@ -621,6 +761,82 @@ group_dependency(Sheet,Results,Node,Inputs):-
 	    group_inputs(Formula,Inputs0, [])
 	),
 	sort(Inputs0, Inputs).
+
+
+% find_copy_node(+Results,-Node,-Original) is det
+%
+% Find nodes that are created by a copy action, i.e. these nodes have
+% one single cell (original) as input.Input variable 'Results' is the
+% appended list of Groups(group_formula format) and Singles resulting
+% from sheet_formula_groups.
+%
+%
+% replace_copy(+Replacements,+In,-Out)
+%
+% Detects copy nodes in a pair of node-[inputs]; if there are copy nodes
+% present in [inputs], then these are replaced by the original nodes. If
+% the node in node-[inputs] is the copy node, than it is replaced
+% by the original and the corresponding [inputs] are an empty list.
+% Input variable 'Replacements' is a list of copy nodes and
+% corresponding originals. The actual copy node is
+
+find_copy_cell(Cell,Original):-
+	M = user,
+	cell_formula(S0,X0,Y0,cell(S,X,Y)),
+	Cell = cell(M:S0,X0,Y0),
+	Original = cell(M:S,X,Y).
+
+
+find_copy_node(Results,Node,Original):-
+	member(Result, Results),
+	(   Result = (Node = cell(S,X,Y))
+	->  Original = cell(S,X,Y)
+	;   Result = f(Sheet0,X0,Y0,cell(S,X,Y))
+	->  Node = cell(Sheet0,X0,Y0),
+	    Original = cell(S,X,Y)
+	).
+
+replace_copy(Replacements,In,Out):-
+	In =Node0-Inputs0,
+	replace_copy2(Replacements,Node0,Node),
+	maplist(replace_copy2(Replacements),Inputs0,Inputs),
+	(   Inputs == [Node]
+	->  Out = Node-[]
+	;   Out =Node-Inputs
+	)	.
+
+replace_copy2(Replacements,Node,Original):-
+	member(Node-Original,Replacements),!.
+replace_copy2(_,Node,Node).
+
+
+% intermed_result(:Sheet,+Graph,-Sink) is det
+
+% Finds intermediate results in sheet_dependency_graph.
+%
+% An intermediate result is a sink cell (no dependents) of which the
+% inputs have more dependents than that sink cell. An intermediate
+% result cell is a dead end in the dependency graph, but the
+% calculation workflow continues through its inputs
+
+intermed_result(Graph,Sink):-
+	member(Sink-[],Graph),
+	member(_Node-Deps,Graph),
+	member(Sink,Deps),
+	length(Deps,L),L>1.
+
+correct_overlap(GraphIn,GraphOut):-
+	sheet_dependency_graph(_, GraphIn),
+	maplist(replace_overlap(GraphIn),GraphIn,GraphOut).
+
+
+
+replace_overlap(Graph,In,Out):-
+	In= cell(S,X,Y)-[],
+	member(Out-_,Graph),
+	Out= cell_range(S,SX,SY,EX,EY),
+	ds_inside(cell_range(S,SX,SY,EX,EY),X,Y),!.
+replace_overlap(_,C,C).
 
 
 % Copied from formula_cells but added but using a node representation that is not
@@ -670,27 +886,10 @@ get_op2(_, Op):-
 cell_dependency(Sheet, cell(Sheet,X,Y), Inputs) :-
 	Sheet = M:_,
 	cell_formula(Sheet, X, Y, Formula),
+%	formula_cells(Formula, M, Inputs0, []),
 	simplify_lookup(Formula,Simple),
 	formula_cells(Simple, M, Inputs0, []),
 	sort(Inputs0, Inputs).
-
-
-merged_cell_dependency(Groups, cell(_,X,Y), MergedCell,MergedInputs):-
-	cell_dependency(cell(_,X,Y), Inputs0),
-	merge_copy_range(Groups,cell(_,X,Y), MergedCell),
-	maplist(merge_copy_range(Groups),Inputs0,MergedInputs).
-
-
-
-merge_copy_range(Groups, cell(_S,X,Y),CopyRange):-
-%	(   Y  > 9 -> trace ; true),
-	member(CopyRange = _,Groups),
-	ds_inside(CopyRange,X,Y),!.
-merge_copy_range(_, C,C).
-
-
-
-
 
 
 formula_cells(cell(S,X,Y), M, [cell(M:S,X,Y)|T], T) :- !.

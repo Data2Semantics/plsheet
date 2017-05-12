@@ -184,17 +184,21 @@ formula_graph(Sheet, File) :-
 
 cell_graph(UGraph, File) :-
 	graphml_write_ugraph(File, map_cell,
-			     [ key(node, 'Label',  string),
-			       key(node, sheet,    string),
-			       key(node, workbook, string),
-			       key(node, row,	   int),
-			       key(node, column,   int),
-			       key(node, r,        int),
-			       key(node, g,        int),
-			       key(node, b,        int)
+			     [ key(node, 'Label',    string),
+			       key(node, sheet,      string),
+			       key(node, workbook,   string),
+			       key(node, row,	     int),
+			       key(node, column,     int),
+			       key(node, startrow,   int),
+			       key(node, startcolumn,int),
+			       key(node, endrow,     int),
+			       key(node, endcolumn,  int),
+			       key(node, r,          int),
+			       key(node, g,          int),
+			       key(node, b,          int)
 			     ],
 			     UGraph).
-
+                                      % individual cells
 map_cell(Field, node(Node), Value) :-
 	map_node(Field, Node, Value).
 
@@ -216,6 +220,29 @@ map_node(g, cell(_:S,_,_), G) :-
 	sheet_color(S, Color),
 	color_rgb(Color, _,G,_).
 map_node(b, cell(_:S,_,_), B) :-
+	sheet_color(S, Color),
+	color_rgb(Color, _,_,B).
+                                      % cell ranges
+map_node('Label', cell_range(_,SX,SY,EX,EY),Label) :-
+	column_print_name(SX, SC),
+	column_print_name(EX, EC),
+	row_print_name(SY, SR),
+	row_print_name(EY, ER),
+	format(atom(Label),'[~w~w:~w~w]', [SC,SR,EC,ER]).
+map_node(sheet, cell_range(_:S,_SX,_SY,_EX,_EY), S).
+map_node(workbook, cell_range(M:_,_SX,_SY,_EX,_EY), M).
+map_node(startcolumn,cell_range(_,SX,_,_,_), SX).
+map_node(startrow,cell_range(_,_,SY,_,_), SY).
+map_node(endcolumn,cell_range(_,_,_,EX,_), EX).
+map_node(endrow,cell_range(_,_,_,_,EY), EY).
+map_node(r, cell_range(_:S,_SX,_SY,_EX,_EY), R) :-
+	assert_seen(S),
+	sheet_color(S, Color),
+	color_rgb(Color, R,_,_).
+map_node(g, cell_range(_:S,_SX,_SY,_EX,_EY), G) :-
+	sheet_color(S, Color),
+	color_rgb(Color, _,G,_).
+map_node(b,cell_range(_:S,_SX,_SY,_EX,_EY) , B) :-
 	sheet_color(S, Color),
 	color_rgb(Color, _,_,B).
 
